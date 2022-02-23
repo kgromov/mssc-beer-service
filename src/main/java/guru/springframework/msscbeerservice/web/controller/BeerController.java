@@ -5,12 +5,15 @@ import guru.sfg.brewery.model.BeerPagedList;
 import guru.sfg.brewery.model.BeerStyleEnum;
 import guru.springframework.msscbeerservice.services.BeerService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -20,11 +23,11 @@ import java.util.UUID;
 @RequestMapping("/api/v1/")
 @RestController
 public class BeerController {
-
     private static final Integer DEFAULT_PAGE_NUMBER = 0;
     private static final Integer DEFAULT_PAGE_SIZE = 25;
 
     private final BeerService beerService;
+    private final DiscoveryClient discoveryClient;
 
     @GetMapping(produces = { "application/json" }, path = "beer")
     public ResponseEntity<BeerPagedList> listBeers(@RequestParam(value = "pageNumber", required = false) Integer pageNumber,
@@ -32,7 +35,11 @@ public class BeerController {
                                                    @RequestParam(value = "beerName", required = false) String beerName,
                                                    @RequestParam(value = "beerStyle", required = false) BeerStyleEnum beerStyle,
                                                    @RequestParam(value = "showInventoryOnHand", required = false) Boolean showInventoryOnHand){
-
+        List<String> services = discoveryClient.getServices();
+        services.forEach(service -> {
+            ServiceInstance instance = discoveryClient.getInstances(service).get(0);
+            String host = instance.getHost();
+        });
         if (showInventoryOnHand == null) {
             showInventoryOnHand = false;
         }
